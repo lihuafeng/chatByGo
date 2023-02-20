@@ -29,12 +29,12 @@ window.onload = function () {
     };
 
     if (window["WebSocket"]) {
-        conn = new WebSocket("ws://" + document.location.host + "/ws");
+        conn = new WebSocket("ws://" + document.location.host + "/ws" + document.location.pathname);
         conn.onopen = function(evt){
-            const userName = prompt("请输入姓名：");
-            var item = document.createElement("div");
-            item.innerHTML = "<b>["+userName+"]Connection.</b>";
-            appendLog(item);
+            // const userName = prompt("请输入姓名：");
+            // var item = document.createElement("div");
+            // item.innerHTML = "<b>["+userName+"]Connection.</b>";
+            // appendLog(item);
         };
         conn.onclose = function (evt) {
             var item = document.createElement("div");
