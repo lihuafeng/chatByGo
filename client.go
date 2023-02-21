@@ -73,7 +73,7 @@ func (c *Client) readPump() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		//修改消息
-		newMessage := c.userName + " says:" + string(message)
+		newMessage := c.hub.roomId + ">>" + c.userName + " says:" + string(message)
 		c.hub.broadcast <- []byte(newMessage)
 	}
 }
@@ -134,7 +134,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	user,_ := r.Cookie("user")
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256),userName:user.Value}
 	client.hub.register <- client
-
+	client.hub.broadcast <- []byte(client.userName + "进入房间")
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
