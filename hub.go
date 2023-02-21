@@ -4,10 +4,6 @@
 
 package main
 
-import (
-	"log"
-)
-
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -50,7 +46,6 @@ func (h *Hub) run() {
 			//删除空房间
 			if len(h.clients) ==0{
 				delete(house, h.roomId)
-				log.Printf("house:%v \n", &house)
 				break
 			}
 		case message := <-h.broadcast:
