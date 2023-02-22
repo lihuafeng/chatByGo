@@ -60,6 +60,8 @@ func (c *Client) readPump() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
+	c.hub.register <- c
+	c.hub.broadcast <- []byte(c.userName + "进入房间")
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -133,8 +135,8 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 	user,_ := r.Cookie("user")
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256),userName:user.Value}
-	client.hub.register <- client
-	client.hub.broadcast <- []byte(client.userName + "进入房间")
+	//client.hub.register <- client
+	//client.hub.broadcast <- []byte(client.userName + "进入房间")
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
