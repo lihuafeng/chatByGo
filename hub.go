@@ -34,29 +34,42 @@ func newHub(roomId string) *Hub {
 }
 
 func (h *Hub) run() {
-	for {
-		select {
-		case client := <-h.register:
-			h.clients[client] = true
-		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.send)
-			}
-			//删除空房间
-			if len(h.clients) ==0{
-				delete(house, h.roomId)
-				break
-			}
-		case message := <-h.broadcast:
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
-		}
-	}
+  defer func() {
+    close(h.unregister)
+    close(h.broadcast)
+  }()
+  for {
+    select {
+    case client := <-h.unregister:
+      roomMutex := roomMutexes[h.roomId]
+      roomMutex.Lock()
+      if _, ok := h.clients[client]; ok {
+        delete(h.clients, client)
+        close(client.send)
+        if len(h.clients) == 0 {
+          house.Delete(h.roomId)
+          roomMutex.Unlock()
+          mutexForRoomMutexes.Lock()
+          if roomMutex.TryLock() {
+            if len(h.clients) == 0 {
+              delete(roomMutexes, h.roomId)
+            }
+            roomMutex.Unlock()
+          }
+          mutexForRoomMutexes.Unlock()
+          return
+        }
+      }
+      roomMutex.Unlock()
+    case message := <-h.broadcast:
+      for client := range h.clients {
+        select {
+        case client.send <- message:
+        default:
+          close(client.send)
+          delete(h.clients, client)
+        }
+      }
+    }
+  }
 }
