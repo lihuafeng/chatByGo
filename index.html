@@ -149,6 +149,7 @@
           insertHTML = "<div class='sys'>" +
             "<span id='bsay'>" + message["text"] + "</span>&nbsp;<small>"+message["time"]+"</small></div>"
           $(".talk_show").append(insertHTML)
+          scrollToBottom();
         }
       } catch (e) {
         console.log(e)
@@ -161,6 +162,7 @@
         insertHTML = "<div class='btalk'>" +
           "<span id='bsay'>" + message["ip"] + "-" + message["time"] + ":<br>" + message["text"] + "</span></div>"
         $(".talk_show").append(insertHTML)
+        scrollToBottom();
       }
     }
 
@@ -169,6 +171,7 @@
         insertHTML = "<div class='atalk'><span id='asay'>" + message["ip"] + "-" + message["time"] + ":<br>" + message["text"] + "</span></div>"
         console.log(insertHTML)
         $(".talk_show").append(insertHTML)
+        scrollToBottom();
       }
     }
 
@@ -190,7 +193,10 @@
         $("#talkwords").val("")
       }
     }
-
+    function scrollToBottom(){
+      var box = document.getElementById('words');
+      box.scrollTop = box.scrollHeight
+    }
 
     jQuery.fn.floatdiv=function(location){
       //判断浏览器版本
