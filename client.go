@@ -6,9 +6,12 @@ package main
 
 import (
 	"bytes"
-	"log"
+  "encoding/json"
+  "fmt"
+  "log"
 	"net/http"
-	"time"
+  "strconv"
+  "time"
 
 	"github.com/gorilla/websocket"
 )
@@ -50,6 +53,7 @@ type Client struct {
 	userName string
 }
 
+
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
@@ -61,7 +65,8 @@ func (c *Client) readPump() {
 		c.conn.Close()
 	}()
 	//c.hub.register <- c
-	c.hub.broadcast <- []byte(c.userName + "进入房间")
+	joinRoomMsg := packageMessage(c.userName, "login", fmt.Sprintf("%s进入房间", c.userName), false)
+	c.hub.broadcast <- []byte(joinRoomMsg)
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -75,7 +80,8 @@ func (c *Client) readPump() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		//修改消息
-		newMessage := c.hub.roomId + ">>" + c.userName + " says:" + string(message)
+		newMessage := packageMessage(c.userName, "chat", string(message), false)
+		//newMessage := c.hub.roomId + ">>" + c.userName + " says:" + string(message)
 		c.hub.broadcast <- []byte(newMessage)
 	}
 }
@@ -85,7 +91,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() {
+func (c *Client) writePump(userName string) {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -94,6 +100,15 @@ func (c *Client) writePump() {
 	for {
 		select {
 		case message, ok := <-c.send:
+		  var newMsg map[string]string
+      err := json.Unmarshal(message, &newMsg)
+      if err == nil{
+        if newMsg["type"] == "chat"{
+          newMsg["mine"] = strconv.FormatBool(c.userName == newMsg["ip"])
+        }
+        jsonMsg,_ := json.Marshal(newMsg)
+        message = jsonMsg
+      }
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -141,6 +156,6 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	//client.hub.broadcast <- []byte(client.userName + "进入房间")
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
-	go client.writePump()
+	go client.writePump(user.Value)
 	go client.readPump()
 }

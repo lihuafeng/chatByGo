@@ -4,6 +4,12 @@
 
 package main
 
+import (
+  "encoding/json"
+  "strconv"
+  "time"
+)
+
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -31,6 +37,18 @@ func newHub(roomId string) *Hub {
 		unregister: make(chan *Client, 10),
 		clients:    make(map[*Client]bool),
 	}
+}
+// 组装消息体
+func packageMessage(user string,msgType string, text string, mine bool) string {
+  var packMess = make(map[string]string)
+  packMess["ip"] = user
+  packMess["type"] = msgType
+  packMess["time"] = time.Now().Format("04:05")
+  packMess["text"] = text
+  packMess["mine"] = strconv.FormatBool(mine)
+
+  message,_ := json.Marshal(packMess)
+  return string(message)
 }
 
 func (h *Hub) run() {
@@ -62,7 +80,9 @@ func (h *Hub) run() {
       }
       roomMutex.Unlock()
     case message := <-h.broadcast:
+
       for client := range h.clients {
+
         select {
         case client.send <- message:
         default:
