@@ -103,6 +103,7 @@ func (c *Client) writePump(userName string) {
 		  var newMsg map[string]string
       err := json.Unmarshal(message, &newMsg)
       if err == nil{
+        //如果是聊天 判断是不是自己发的
         if newMsg["type"] == "chat"{
           newMsg["mine"] = strconv.FormatBool(c.userName == newMsg["ip"])
         }
@@ -152,8 +153,6 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256),userName:user.Value}
   client.hub.clients[client] = true
   roomMutexes[hub.roomId].Unlock()
-	//client.hub.register <- client
-	//client.hub.broadcast <- []byte(client.userName + "进入房间")
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump(user.Value)

@@ -80,9 +80,7 @@ func (h *Hub) run() {
       }
       roomMutex.Unlock()
     case message := <-h.broadcast:
-
       for client := range h.clients {
-
         select {
         case client.send <- message:
         default:
