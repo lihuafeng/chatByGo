@@ -1,0 +1,340 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>匿名聊天室</title>
+  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+  <style type="text/css">
+    @media screen and (min-width: 320px) and (max-width: 1156px) {
+      .talk_con_mob {
+        width: 600px;
+        height: 500px;
+        border: 1px solid #666;
+        margin: 50px auto 0;
+        background: #f9f9f9;
+      }
+
+      .talk_show_mob {
+        width: 580px;
+        height: 420px;
+        border: 1px solid #666;
+        background: #fff;
+        margin: 10px auto 0;
+        overflow: auto;
+      }
+
+      .talk_input_mob {
+        width: 580px;
+        margin: 10px auto 0;
+      }
+
+      .talk_word_mob {
+        width: 420px;
+        height: 26px;
+        padding: 0px;
+        float: left;
+        margin-left: 10px;
+        outline: none;
+        text-indent: 10px;
+      }
+    }
+
+    #warning{
+      color:#e81078;
+      overflow: hidden;
+      position:relative;
+      animation:mymove 5s infinite;
+      -webkit-animation:mymove 5s infinite; /* Safari 和 Chrome */
+    }
+    @keyframes mymove
+    {
+      from {left:0px;}
+      to {left:300px;}
+    }
+
+    @-webkit-keyframes mymove /*Safari and Chrome*/
+    {
+      from {left:0px;}
+      to {left:300px;}
+    }
+    .talk_con {
+      width: 600px;
+      height: 500px;
+      border: 1px solid #666;
+      margin: 50px auto 0;
+      background: #f9f9f9;
+    }
+
+    .talk_show {
+      width: 580px;
+      height: 420px;
+      border: 1px solid #666;
+      background: #fff;
+      margin: 10px auto 0;
+      overflow: auto;
+    }
+
+    .talk_input {
+      width: 580px;
+      margin: 10px auto 0;
+    }
+
+    .whotalk {
+      width: 80px;
+      height: 30px;
+      float: left;
+      outline: none;
+    }
+
+    .talk_word {
+      width: 420px;
+      height: 26px;
+      padding: 0px;
+      float: left;
+      margin-left: 10px;
+      outline: none;
+      text-indent: 10px;
+    }
+
+    .talk_sub {
+      width: 56px;
+      height: 30px;
+      float: right;
+      margin-right: 10px;
+    }
+
+    .atalk {
+      margin: 10px;
+    }
+
+    .atalk span {
+      display: inline-block;
+      background: #0181cc;
+      border-radius: 10px;
+      color: #fff;
+      padding: 5px 10px;
+    }
+
+    .btalk {
+      margin: 10px;
+      text-align: right;
+    }
+
+    .sys {
+      margin: 10px;
+      text-align: center;
+    }
+
+    .btalk span {
+      display: inline-block;
+      background: #ef8201;
+      border-radius: 10px;
+      color: #fff;
+      padding: 5px 10px;
+    }
+  </style>
+  <script>
+    const userName = prompt("请输入姓名：");
+    document.cookie = "user="+userName
+    var socket = new WebSocket("ws://" + document.location.host + "/ws" + document.location.pathname);
+    socket.onmessage = function (event) {
+      try {
+        message = JSON.parse(event.data)
+        if (message["mine"] == true || message["mine"] == "true") {
+          chat_mine()
+        } else {
+          chat_other()
+        }
+        if (message["type"] == "login" ||
+          message["type"] == "logout") {
+          insertHTML = "<div class='sys'>" +
+            "<span id='bsay'>" + message["text"] + "</span>&nbsp;<small>"+message["time"]+"</small></div>"
+          $(".talk_show").append(insertHTML)
+          scrollToBottom();
+        }
+      } catch (e) {
+        console.log(e)
+        console.log(event)
+      }
+    };
+
+    function chat_mine() {
+      if (message["type"] == "chat") {
+        insertHTML = "<div class='btalk'>" +
+          "<span id='bsay'>" + message["ip"] + "-" + message["time"] + ":<br>" + message["text"] + "</span></div>"
+        $(".talk_show").append(insertHTML)
+        scrollToBottom();
+      }
+    }
+
+    function chat_other() {
+      if (message["type"] == "chat") {
+        insertHTML = "<div class='atalk'><span id='asay'>" + message["ip"] + "-" + message["time"] + ":<br>" + message["text"] + "</span></div>"
+        console.log(insertHTML)
+        $(".talk_show").append(insertHTML)
+        scrollToBottom();
+      }
+    }
+
+    $(function () {
+      $("#talksub").click(function () {
+        //展示信息在屏幕上
+        message = $("#talkwords").val()
+        socket.send(message)
+        $("#talkwords").val("")
+      })
+
+      $("#warning").floatdiv("middle");
+    })
+
+    function InputPress() {
+      if (event.keyCode == 13) {
+        message = $("#talkwords").val()
+        socket.send(message)
+        $("#talkwords").val("")
+      }
+    }
+    function scrollToBottom(){
+      var box = document.getElementById('words');
+      box.scrollTop = box.scrollHeight
+    }
+
+    jQuery.fn.floatdiv=function(location){
+      //判断浏览器版本
+      var isIE6=false;
+      var Sys = {};
+      var ua = navigator.userAgent.toLowerCase();
+      var s;
+      (s = ua.match(/msie ([\d.]+)/)) ? Sys.ie = s[1] : 0;
+      if(Sys.ie && Sys.ie=="6.0"){
+        isIE6=true;
+      }
+      var windowWidth,windowHeight;//窗口的高和宽
+      //取得窗口的高和宽
+      if (self.innerHeight) {
+        windowWidth=self.innerWidth;
+        windowHeight=self.innerHeight;
+      }else if (document.documentElement&&document.documentElement.clientHeight) {
+        windowWidth=document.documentElement.clientWidth;
+        windowHeight=document.documentElement.clientHeight;
+      } else if (document.body) {
+        windowWidth=document.body.clientWidth;
+        windowHeight=document.body.clientHeight;
+      }
+      return this.each(function(){
+        var loc;//层的绝对定位位置
+        var wrap=$("");
+        var top=-1;
+        if(location==undefined || location.constructor == String){
+          switch(location){
+            case("rightbottom")://右下角
+              loc={right:"0px",bottom:"0px"};
+              break;
+            case("leftbottom")://左下角
+              loc={left:"0px",bottom:"0px"};
+              break;
+            case("lefttop")://左上角
+              loc={left:"0px",top:"0px"};
+              top=0;
+              break;
+            case("righttop")://右上角
+              loc={right:"0px",top:"0px"};
+              top=0;
+              break;
+            case("middletop")://居中置顶
+              loc={left:windowWidth/2-$(this).width()/2+"px",top:"0px"};
+              top=0;
+              break;
+            case("middlebottom")://居中置低
+              loc={left:windowWidth/2-$(this).width()/2+"px",bottom:"0px"};
+              break;
+            case("leftmiddle")://左边居中
+              loc={left:"0px",top:windowHeight/2-$(this).height()/2+"px"};
+              top=windowHeight/2-$(this).height()/2;
+              break;
+            case("rightmiddle")://右边居中
+              loc={right:"0px",top:windowHeight/2-$(this).height()/2+"px"};
+              top=windowHeight/2-$(this).height()/2;
+              break;
+            case("middle")://居中
+              var l=0;//居左
+              var t=0;//居上
+              l=windowWidth/2-$(this).width()/2;
+              t=windowHeight/2-$(this).height()/2;
+              top=t;
+              loc={left:l+"px",top:t+"px"};
+              break;
+            default://默认为右下角
+              location="rightbottom";
+              loc={right:"0px",bottom:"0px"};
+              break;
+          }
+        }else{
+          loc=location;
+          var str=loc.top;
+          str=str.replace("px","");
+          top=str;
+        }
+        /*fied ie6 css hack*/
+        if(isIE6){
+          if (top>=0)
+          {
+            wrap=$("");
+          }else{
+            wrap=$("");
+          }
+        }
+        $("body").append(wrap);
+        wrap.css(loc).css({position:"fixed",
+          z_index:"999"});
+        if (isIE6)
+        {
+
+          wrap.css("position","absolute");
+          //没有加这个的话，ie6使用表达式时就会发现跳动现象
+          $("body").css("background-attachment","fixed").css("background-image","url(n1othing.txt)");
+        }
+        //将要固定的层添加到固定层里
+        $(this).appendTo(wrap);
+      });
+    };
+  </script>
+</head>
+<body>
+<div class="talk_con" id="talk_con_id">
+  <div id="warning">请文明、礼貌聊天，违规者自动清理。</div>
+  <div class="talk_show" id="words">
+    <div class="atalk"><span id="asay">欢迎进入模拟客户聊天</span></div>
+  </div>
+  <div class="talk_input" id="talk_input_id">
+    <input type="text" class="talk_word" id="talkwords" onkeypress="InputPress()">
+    <input type="button" value="发送" class="talk_sub" id="talksub">
+  </div>
+</div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

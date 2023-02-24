@@ -18,13 +18,21 @@ var roomMutexes = make(map[string]*sync.Mutex)
 var mutexForRoomMutexes = new(sync.Mutex)
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
-  log.Println(r.URL)
+  if r.Method != http.MethodGet {
+    http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+    return
+  }
+  http.ServeFile(w, r, "chat.html")
+}
+
+func indexAction(w http.ResponseWriter, r *http.Request)  {
   if r.Method != http.MethodGet {
     http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
     return
   }
   http.ServeFile(w, r, "index.html")
 }
+
 /**
 多房间聊天室
 房间号通过url链接传递
@@ -32,6 +40,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 func main() {
   flag.Parse()
   r := mux.NewRouter()
+  r.HandleFunc("/", indexAction)
   r.HandleFunc("/{room}", serveHome)
   r.HandleFunc("/ws/{room}", func(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
@@ -56,7 +65,10 @@ func main() {
     }
     serveWs(hub, w, r)
   })
-  err := http.ListenAndServe(*addr, r)
+  //启动静态文件服务
+  http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
+  http.Handle("/", r)
+  err := http.ListenAndServe(*addr, nil)
   if err != nil {
     log.Fatal("ListenAndServe: ", err)
   }
