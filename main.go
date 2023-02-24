@@ -7,7 +7,8 @@ package main
 import (
 	"flag"
 	"github.com/gorilla/mux"
-	"log"
+  "html/template"
+  "log"
 	"net/http"
   "sync"
 )
@@ -30,7 +31,21 @@ func indexAction(w http.ResponseWriter, r *http.Request)  {
     http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
     return
   }
-  http.ServeFile(w, r, "index.html")
+  t1, err := template.ParseFiles("index.html")
+  if err != nil {
+    panic(err)
+  }
+  data := struct {
+    Count int
+    RoomIds []string
+  }{
+    Count:len(roomMutexes),
+  }
+  for k,_ := range roomMutexes{
+    data.RoomIds = append(data.RoomIds, k)
+  }
+  t1.Execute(w, data)
+  //http.ServeFile(w, r, "index.html")
 }
 
 /**

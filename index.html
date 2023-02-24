@@ -10,5 +10,24 @@
   <script type="text/javascript" src="static/js/bootstrap.min.js"></script>
 </head>
 <body>
+  <div class="container">
+    <div class="row">
+      <blockquote>
+        <p>请文明聊天，禁止骂人，违规者永久进小黑屋。</p>
+        <footer>匿名聊天室 <cite title="Source Title">Tips:</cite></footer>
+      </blockquote>
+    </div>
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3">
+        <p class="text-center"><span>当前房间数：</span>{{.Count}}</p>
+        <br>
+        {{range .RoomIds}}
+        <p class="text-center"><a href="/{{ . }}">{{ . }}</a></p>
+        {{else}}
+        <p class="text-center"><strong>还没有房间，新建房间吧-></strong></p>
+        {{end}}
+        </div>
+    </div>
+  </div>
 </body>
 </html>
